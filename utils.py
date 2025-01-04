@@ -35,10 +35,9 @@ def render_csv(rows, header=None, delimiter=','):
     writer.writerows(rows)
     return stream.getvalue()
 
-
 def render_type_links(text):
-    return re.sub('\[([^|\]]*)\|([^\]]*)\]',
-                  '<a href="/poemlist?source=type&id=\\1">\\2</a>', text)
+    return re.sub(r'\[([^|\]]*)\|([^\]]*)\]',
+                  r'<a href="/poemlist?source=type&id=\1">\2</a>', text)
 
 
 def escape_xml(string):

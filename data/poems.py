@@ -198,7 +198,7 @@ class Poems:
             place_lst = []
             if pl is not None:
                 for x in pl.split(';;;'):
-                    m = re.match('([^:|]+):([^:|]+)(\|([^:|]+):([^:|]+))?', x)
+                    m = re.match(r'([^:|]+):([^:|]+)(\\|([^:|]+):([^:|]+))?', x)
                     if m is not None:
                         place_lst.append(PlaceData(m.group(1), m.group(2), m.group(4), m.group(5)))
             collector_lst = []
