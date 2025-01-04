@@ -3,5 +3,5 @@ gunicorn
 lxml
 numpy
 scipy
-pymysql
+psycopg2
 git+https://github.com/hsci-r/shortsim
