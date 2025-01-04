@@ -133,7 +133,6 @@ def render(**args):
     data = {
         'p1': poem_1, 'p2': poem_2,
         'meta_1': meta_1, 'meta_2': meta_2, 'meta_keys': meta_keys,
-        'alignment': alignment, 'scores': scores, 'types': types,
-        'maintenance': config.check_maintenance()
+        'alignment': alignment, 'scores': scores, 'types': types
     }
     return render_template('poemdiff.html', args=args, data=data, links=links)

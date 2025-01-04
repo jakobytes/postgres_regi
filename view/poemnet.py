@@ -74,6 +74,5 @@ def render(**args):
             types = poemnet['nodes'].get_types(db)
             types.get_names(db)
     links = generate_page_links(args)
-    data = { 'poemnet': poemnet, 'types': types,
-             'maintenance': config.check_maintenance() }
+    data = { 'poemnet': poemnet, 'types': types}
     return render_template('poemnet.html', args=args, data=data, links=links)

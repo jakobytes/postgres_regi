@@ -66,7 +66,6 @@ def render(**args):
                         ) if place_data.parish_name is not None else place_data.county_name
                 data = { 'poems': poems, 'title': title, 'parishes': parishes }
 
-    data['maintenance'] = config.check_maintenance()
 
     links = {}
     if args['source'] == 'type':

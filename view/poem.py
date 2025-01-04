@@ -151,8 +151,7 @@ def render(**args):
         'verse_poems': verse_poems,
         'linked_poems': linked_poems,
         'poems_sharing_verses': poems_sharing_verses,
-        'clusterings': clusterings,
-        'maintenance': config.check_maintenance()
+        'clusterings': clusterings
     }
     links = generate_page_links(args, clusterings)
     return render_template('poem.{}'.format(args['format']),

@@ -51,7 +51,6 @@ DEFAULT_PAGES = [
 
 @profile
 def render(**args):
-    maintenance = config.check_maintenance()
     if args['q'] is None:
         with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
             with db_con.cursor() as db:
@@ -75,5 +74,5 @@ def render(**args):
         data = { 'r_verses': r_verses, 'r_types': r_types,
                  'r_meta': r_meta, 'r_inline': r_inline,
                  'r_smd': r_smd,
-                 'limit': config.SEARCH_LIMIT, 'maintenance': maintenance }
+                 'limit': config.SEARCH_LIMIT}
         return render_template('search_results.html', args=args, data=data, links={})

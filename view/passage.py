@@ -133,6 +133,6 @@ def render(**args):
             { 'source': 'nros', 'nro': ','.join(pas['nro'] for pas in passages) },
             DENDROGRAM_DEFAULTS)
         data = { 'passages': passages, 'poems': poems, 'types': types,
-                 'clusterings': clusterings,
-                 'maintenance': config.check_maintenance() }
+                 'clusterings': clusterings
+        }
         return render_template('passage.html', args=args, data=data, links=links)

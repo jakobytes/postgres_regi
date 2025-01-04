@@ -79,8 +79,7 @@ def render(**args):
             'poems': poems,
             'types': types,
             'nbclust': nbclust,
-            'clusterings': clusterings,
-            'maintenance': config.check_maintenance()
+            'clusterings': clusterings
         }
         map_args = { 'nro': args['nro'], 'pos': args['pos'],
                      'clustering': args['clustering'] }
