@@ -1,6 +1,6 @@
 from collections import defaultdict
 from flask import render_template
-import pymysql
+import psycopg2
 
 import config
 from data.logging import profile
@@ -61,15 +61,16 @@ def get_cluster_network(db, clust_id, clustering_id=0, maxdepth=3, maxnodes=30):
 @profile
 def render(**args):
     clustnet, clusterings, verse = None, None, None
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        verse = get_verses(
-            db, nro=args['nro'], start_pos=args['pos'],
-            end_pos=args['pos'], clustering_id=args['clustering'])[0]
-        clusterings = get_clusterings(db)
-        clustnet = get_cluster_network(db, verse.clust_id,
-                                       clustering_id=args['clustering'],
-                                       maxdepth=args['maxdepth'],
-                                       maxnodes=args['maxnodes'])
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            verse = get_verses(
+                db, nro=args['nro'], start_pos=args['pos'],
+                end_pos=args['pos'], clustering_id=args['clustering'])[0]
+            clusterings = get_clusterings(db)
+            clustnet = get_cluster_network(db, verse.clust_id,
+                                           clustering_id=args['clustering'],
+                                           maxdepth=args['maxdepth'],
+                                           maxnodes=args['maxnodes'])
     data = {
         'verse': verse,
         'clustnet': clustnet,
@@ -78,4 +79,3 @@ def render(**args):
     }
     links = generate_page_links(args, clusterings)
     return render_template('clustnet.html', args=args, data=data, links=links)
-

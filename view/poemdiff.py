@@ -1,6 +1,6 @@
 from collections import defaultdict
 from flask import render_template
-import pymysql
+import psycopg2
 import re
 from subprocess import Popen, PIPE
 
@@ -44,7 +44,6 @@ def generate_page_links(args):
 @profile
 def render(**args):
 
-    # FIXME code duplication with poem.py!
     def _makecolcomp(value):
         result = hex(255-int(value*255))[2:]
         if len(result) == 1:
@@ -58,16 +57,14 @@ def render(**args):
         b = _makecolcomp(max(value-0.5, 0))
         return '#'+rg+rg+b 
 
-    # TODO
-    # - some refactoring
-    # - bold for captions
     poems = Poems(nros=[args['nro1'], args['nro2']])
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        poems.get_raw_meta(db)
-        poems.get_structured_metadata(db)
-        poems.get_text(db)
-        types = poems.get_types(db)
-        types.get_names(db)
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            poems.get_raw_meta(db)
+            poems.get_structured_metadata(db)
+            poems.get_text(db)
+            types = poems.get_types(db)
+            types.get_names(db)
 
     poem_1 = poems[args['nro1']]
     poem_2 = poems[args['nro2']]
@@ -90,14 +87,12 @@ def render(**args):
                           header=(args['nro1'], args['nro2'], 'sim_cos'),
                           delimiter='\t' if args['format'] == 'tsv' else ',')
 
-    # render HTML
     meta_keys = sorted(list(set(poem_1.meta.keys()) | set(poem_2.meta.keys())))
     meta_1, meta_2 = {}, {}
     for key in meta_keys:
         meta_1[key] = remove_xml(poem_1.meta[key], tag=key) if key in poem_1.meta else ''
         meta_2[key] = remove_xml(poem_2.meta[key], tag=key) if key in poem_2.meta else ''
     alignment = []
-    # TODO rendering the verse-level alignments - ugly code, refactor this!
     for row in al:
         verse_1, verse_2 = [], []
         if row[2] > 0:
@@ -142,4 +137,3 @@ def render(**args):
         'maintenance': config.check_maintenance()
     }
     return render_template('poemdiff.html', args=args, data=data, links=links)
-

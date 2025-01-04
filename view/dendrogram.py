@@ -1,7 +1,7 @@
 from flask import render_template
 from operator import itemgetter
 import numpy as np
-import pymysql
+import psycopg2
 import scipy.cluster.hierarchy
 from urllib.parse import urlencode
 
@@ -92,52 +92,53 @@ def transform_vert(dd, n, nros):
 @profile
 def render(**args):
     poems, types, target_type, inner = None, None, None, None
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        if args['source'] == 'type':
-            target_type = Types(ids=[args['type_id']])
-            target_type.get_descriptions(db)
-            nros, minor_nros = target_type.get_poem_ids(db, minor=True)
-            poems = Poems(nros=nros+minor_nros)
-            target_type.get_ancestors(db, add=True)
-            target_type.get_names(db)
-        elif args['source'] == 'cluster':
-            poems = Poems(nros=[args['nro'][0]])
-            poems.get_poem_cluster_info(db)
-            poems = Poems.get_by_cluster(db, poems[args['nro'][0]].p_clust_id)
-            poems.get_poem_cluster_info(db)
-        elif args['source'] == 'nros':
-            poems = Poems(nros=args['nro'])
-        elif args['source'] == 'collector':
-            poems = Poems.get_by_collector(db, args['id'])
-        elif args['source'] == 'place':
-            poems = Poems.get_by_place(db, args['id'])
-
-        inner = set(poems)
-        if args['nb'] is not None and args['nb'] < 1:
-            poems.get_similar_poems(db, sim_thr=args['nb'])
-            new_nros = set(poems)
-            for nro in poems:
-                for s in poems[nro].sim_poems:
-                    new_nros.add(s.nro)
-            poems = Poems(nros=new_nros)
-            if args['source'] == 'cluster':
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            if args['source'] == 'type':
+                target_type = Types(ids=[args['type_id']])
+                target_type.get_descriptions(db)
+                nros, minor_nros = target_type.get_poem_ids(db, minor=True)
+                poems = Poems(nros=nros+minor_nros)
+                target_type.get_ancestors(db, add=True)
+                target_type.get_names(db)
+            elif args['source'] == 'cluster':
+                poems = Poems(nros=[args['nro'][0]])
                 poems.get_poem_cluster_info(db)
-        poems.get_structured_metadata(db)
-        poems.get_similar_poems(db, within=True)
-        types = poems.get_types(db)
-        types.get_names(db)
+                poems = Poems.get_by_cluster(db, poems[args['nro'][0]].p_clust_id)
+                poems.get_poem_cluster_info(db)
+            elif args['source'] == 'nros':
+                poems = Poems(nros=args['nro'])
+            elif args['source'] == 'collector':
+                poems = Poems.get_by_collector(db, args['id'])
+            elif args['source'] == 'place':
+                poems = Poems.get_by_place(db, args['id'])
 
-        title = None
-        if args['source'] == 'type':
-            title = target_type[args['type_id']].name
-        elif args['source'] == 'cluster':
-            title = 'Poem cluster #{}'.format(poems[args['nro'][0]].p_clust_id)
-        elif args['source'] == 'place':
-            place_data = get_place_data(db, args['id'])
-            title = '{} \u2014 {}'.format(place_data.county_name, place_data.parish_name) \
-                if place_data.parish_name is not None else place_data.county_name
-        elif args['source'] == 'collector':
-            title = get_collector_data(db, args['id']).name
+            inner = set(poems)
+            if args['nb'] is not None and args['nb'] < 1:
+                poems.get_similar_poems(db, sim_thr=args['nb'])
+                new_nros = set(poems)
+                for nro in poems:
+                    for s in poems[nro].sim_poems:
+                        new_nros.add(s.nro)
+                poems = Poems(nros=new_nros)
+                if args['source'] == 'cluster':
+                    poems.get_poem_cluster_info(db)
+            poems.get_structured_metadata(db)
+            poems.get_similar_poems(db, within=True)
+            types = poems.get_types(db)
+            types.get_names(db)
+
+            title = None
+            if args['source'] == 'type':
+                title = target_type[args['type_id']].name
+            elif args['source'] == 'cluster':
+                title = 'Poem cluster #{}'.format(poems[args['nro'][0]].p_clust_id)
+            elif args['source'] == 'place':
+                place_data = get_place_data(db, args['id'])
+                title = '{} — {}'.format(place_data.county_name, place_data.parish_name) \
+                    if place_data.parish_name is not None else place_data.county_name
+            elif args['source'] == 'collector':
+                title = get_collector_data(db, args['id']).name
 
     d = sim_to_dist(make_sim_mtx(poems))
     clust = scipy.cluster.hierarchy.linkage(d, method=args['method'])
@@ -163,4 +164,3 @@ def render(**args):
     }
     links = generate_page_links(args) 
     return render_template('dendrogram.html', args=args, data=data, links=links)
-

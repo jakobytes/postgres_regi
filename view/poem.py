@@ -2,7 +2,7 @@ from flask import render_template
 import lxml.etree as ET
 from operator import itemgetter
 import math
-import pymysql
+import psycopg2
 import re
 
 from collections import Counter, defaultdict
@@ -49,7 +49,6 @@ def generate_page_links(args, clusterings):
     return result
 
 
-# TODO refactor and document!
 def get_shared_verses(db, poem, max, thr, order, clustering_id=0):
     clust_ids = set(v.clust_id for v in poem.text if v.v_type == 'V' and v.text_cl)
     verses = get_verses(db, clust_id=tuple(clust_ids), clustering_id=clustering_id)
@@ -102,37 +101,36 @@ def render(**args):
     clusterings = None
     sim_poems, types = None, None
     verse_poems, linked_poems, poems_sharing_verses = None, None, None
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        clusterings = get_clusterings(db)
-        p.get_duplicates_and_parents(db)
-        p.get_poem_cluster_info(db)
-        p.get_raw_meta(db)
-        p.get_refs(db)
-        p.get_similar_poems(db, sim_thr=0.1, sim_onesided_thr=0.5)
-        p.get_structured_metadata(db)
-        p.get_text(db, clustering_id=args['clustering'])
-        # poem types
-        types = p.get_types(db)
-        types.get_names(db)
-        # get metadata for related poems (similar, duplicates etc.)
-        related_nros = list(set([x.nro for x in p[args['nro']].sim_poems] \
-                                + p[args['nro']].duplicates + p[args['nro']].parents))
-        related = Poems(nros=related_nros)
-        if related:
-            related.get_structured_metadata(db)
-        # get verse clusters for the matrix view
-        if args['show_shared_verses']:
-            verse_poems, linked_poems, poems_sharing_verses = \
-                get_shared_verses(db, p[args['nro']], args['max_similar'],
-                                  args['sim_thr'], args['sim_order'],
-                                  args['clustering'])
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            clusterings = get_clusterings(db)
+            p.get_duplicates_and_parents(db)
+            p.get_poem_cluster_info(db)
+            p.get_raw_meta(db)
+            p.get_refs(db)
+            p.get_similar_poems(db, sim_thr=0.1, sim_onesided_thr=0.5)
+            p.get_structured_metadata(db)
+            p.get_text(db, clustering_id=args['clustering'])
+            # poem types
+            types = p.get_types(db)
+            types.get_names(db)
+            # get metadata for related poems (similar, duplicates etc.)
+            related_nros = list(set([x.nro for x in p[args['nro']].sim_poems] \
+                                    + p[args['nro']].duplicates + p[args['nro']].parents))
+            related = Poems(nros=related_nros)
+            if related:
+                related.get_structured_metadata(db)
+            # get verse clusters for the matrix view
+            if args['show_shared_verses']:
+                verse_poems, linked_poems, poems_sharing_verses = \
+                    get_shared_verses(db, p[args['nro']], args['max_similar'],
+                                      args['sim_thr'], args['sim_order'],
+                                      args['clustering'])
 
-    # render the XML-containing text
     poem = p[args['nro']]
     for v in poem.text:
         v.render_text(poem.refs)
 
-    # render the XML in the raw metadata
     for key, val in p[args['nro']].meta.items():
         p[args['nro']].meta[key] = render_xml(val, poem.refs, tag=key)
 
@@ -159,4 +157,3 @@ def render(**args):
     links = generate_page_links(args, clusterings)
     return render_template('poem.{}'.format(args['format']),
                            args=args, data=data, links=links)
-

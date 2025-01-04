@@ -1,7 +1,7 @@
 from flask import render_template
 import numpy as np
 from operator import itemgetter
-import pymysql
+import psycopg2
 import scipy.cluster.hierarchy
 
 from shortsim.align import align
@@ -41,11 +41,6 @@ def generate_page_links(args):
 
 
 def merge_alignments(poems, merges, v_sims):
-    # This computes the aggregated similarity (max) between verse tuples,
-    # leaving Nones out.
-    # e.g. _agr_sim((A, None, B), (None, C, None, D))
-    #      = max(sim(A, C), sim(A, D), sim(B, C), sim(B, D))
-    # Returns -1 if no verse pair is similar.
     def _agr_sim(x, y):
         x_ids = [vx.v_id for vx in x if vx is not None]
         y_ids = [vy.v_id for vy in y if vy is not None]
@@ -53,11 +48,6 @@ def merge_alignments(poems, merges, v_sims):
                        for i in x_ids for j in y_ids if j in v_sims[i]]
         return max(sims)
 
-    # FIXME passing x_size and y_size here is slow and clumsy!
-    # A better solution would be to have parameters like
-    # `ins` and `del` instead of `empty` for the `align()` function
-    # (different `empty` values for the left and right side),
-    # so that the Nones produced by it already have the right lengths.
     def _merge(x, y, x_size, y_size):
         mx = (None,) * x_size if x is None else x
         my = (None,) * y_size if y is None else y
@@ -81,13 +71,14 @@ def merge_alignments(poems, merges, v_sims):
 @profile
 def render(**args):
     poems = Poems(nros=args['nro'])
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        poems.get_raw_meta(db)
-        poems.get_structured_metadata(db)
-        poems.get_text(db)
-        poems.get_similar_poems(db, within=True)
-        types = poems.get_types(db)
-        types.get_names(db)
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            poems.get_raw_meta(db)
+            poems.get_structured_metadata(db)
+            poems.get_text(db)
+            poems.get_similar_poems(db, within=True)
+            types = poems.get_types(db)
+            types.get_names(db)
 
     m = make_sim_mtx(poems)
     m_onesided = make_sim_mtx(poems, onesided=True)
@@ -95,14 +86,12 @@ def render(**args):
     v_sims = compute_verse_similarity(poems, args['t'])
     clust, ids = None, None
     if args['method'] == 'none':
-        # align the poems from left to right, in the order given by `nros`
         clust = np.zeros(shape=(len(poems)-1, 2))
         for i in range(len(poems)-1):
             clust[i,0] = 0 if i == 0 else len(poems)+i-1
             clust[i,1] = i+1
         ids = list(range(len(poems)))
     else:
-        # arrange the poems using hierarchical clustering
         clust = scipy.cluster.hierarchy.linkage(d, method=args['method'])
         ids = scipy.cluster.hierarchy.leaves_list(clust) 
 
@@ -128,4 +117,3 @@ def render(**args):
         }
         links = generate_page_links(args)
         return render_template('multidiff.html', args=args, data=data, links=links)
-

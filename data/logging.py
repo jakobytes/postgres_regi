@@ -1,6 +1,6 @@
 from flask import request
 from socket import gethostbyname, gethostname
-import pymysql
+import psycopg2
 import time
 
 import config
@@ -14,14 +14,14 @@ def get_remote_addr():
 
 def create_logging_table(db):
     db.execute(
-        'CREATE TABLE {}('
-        '  log_id INTEGER NOT NULL AUTO_INCREMENT,'
-        '  level ENUM("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL") DEFAULT "INFO",'
-        '  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,'
+        'CREATE TABLE IF NOT EXISTS {}('
+        '  log_id SERIAL PRIMARY KEY,'
+        '  level VARCHAR(10) DEFAULT \'INFO\','
+        '  timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,'
         '  hostname VARCHAR(100) DEFAULT NULL,'
         '  msg VARCHAR(2000) DEFAULT NULL,'
         '  user_agent VARCHAR(1000) DEFAULT NULL,'
-        '  crawler varchar(50) DEFAULT NULL,'
+        '  crawler VARCHAR(50) DEFAULT NULL,'
         '  PRIMARY KEY(log_id), '
         '  INDEX (level), '
         '  INDEX (timestamp), '
@@ -31,15 +31,15 @@ def create_logging_table(db):
 
 def log(level, msg):
     if config.ENABLE_LOGGING_TO_DB:
-        with pymysql.connect(**config.MYSQL_PARAMS) as db_con:
+        with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
             with db_con.cursor() as db:
-                db.execute('SHOW TABLES LIKE %s;', (config.LOGGING_TABLE_NAME,))
-                if len(list(db.fetchall())) <= 0:
+                db.execute('SELECT to_regclass(%s);', (config.LOGGING_TABLE_NAME,))
+                if db.fetchone()[0] is None:
                     create_logging_table(db)
                 if len(msg) > 2000:
                     msg = msg[:1997] + '...'
                 db.execute('INSERT INTO {} (level, hostname, msg, user_agent) '
-                           'VALUES (%s, %s, %s, %s)'\
+                           'VALUES (%s, %s, %s, %s)'
                            .format(config.LOGGING_TABLE_NAME),
                            (level, gethostbyname(gethostname()), msg,
                             request.user_agent.string))
@@ -62,4 +62,3 @@ def profile(fun):
                         fun.__module__, fun.__name__, t2-t1))
         return result
     return exec_profiled_fun
-

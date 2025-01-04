@@ -1,6 +1,6 @@
 from flask import Flask, Response, redirect, request
 from werkzeug.middleware.proxy_fix import ProxyFix
-import pymysql
+import psycopg2
 import re
 
 import config
@@ -19,8 +19,6 @@ import view.verse
 
 application = Flask(__name__)
 if config.ENABLE_PROXY:
-    # Used only to get the client's IP address, which is not used now.
-    # The environment variable "PROXY" thus shouldn't be set.
     application.wsgi_app = ProxyFix(application.wsgi_app)
 config.setup_tables()
 
@@ -37,7 +35,6 @@ def getargs(request, defaults):
                                  and not isinstance(defval, list) \
                              else str
         result[key] = request.args.get(key, defval, dtype)
-        # Try to convert the values to integers, but only if possible.
         if isinstance(result[key], str) and isinstance(defval, list):
             result[key] = result[key].split(',')
             try:
@@ -70,6 +67,7 @@ def show_passage():
     else:
         return _compact(result)
 
+
 @application.route('/poemdiff')
 @application.route('/runodiff')
 def show_diff():
@@ -80,6 +78,7 @@ def show_diff():
     else:
         return _compact(result)
 
+
 @application.route('/multidiff')
 def show_multidiff():
     args = getargs(request, view.multidiff.DEFAULTS)
@@ -88,6 +87,7 @@ def show_multidiff():
         return Response(result, mimetype='text/plain')
     else:
         return _compact(result)
+
 
 @application.route('/poem')
 @application.route('/runo')
@@ -101,11 +101,13 @@ def show_poem():
     else:
         return _compact(result)
 
+
 @application.route('/poemlist')
 def show_poemlist():
     args = getargs(request, view.poemlist.DEFAULTS)
     result = view.poemlist.render(**args)
     return _compact(result)
+
 
 @application.route('/poemnet')
 def show_poemnet():
@@ -128,12 +130,12 @@ def show_verse():
 @application.route('/')
 def show_search():
     args = getargs(request, view.search.DEFAULTS)
-    # If a poem ID or title was entered in the search box -> redirect to the poem.
     if args['q'] is not None:
-        with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-            nro = get_poem_by_id_or_title(db, args['q'])
-            if nro is not None:
-                return redirect('/poem?nro={}'.format(nro))
+        with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+            with db_con.cursor() as db:
+                nro = get_poem_by_id_or_title(db, args['q'])
+                if nro is not None:
+                    return redirect('/poem?nro={}'.format(nro))
     result = view.search.render(**args)
     return _compact(result)
 
@@ -144,6 +146,7 @@ def show_type():
     type_id = request.args.get('id', None, str)
     return redirect('/poemlist?source=type&id={}'.format(type_id))
 
+
 @application.route('/robots.txt')
 def show_robots_txt():
     return application.send_static_file('robots.txt')
@@ -151,4 +154,3 @@ def show_robots_txt():
 
 if __name__ == '__main__':
     application.run()
-

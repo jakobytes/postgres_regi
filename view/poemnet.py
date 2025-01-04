@@ -1,6 +1,6 @@
 from flask import render_template
 from operator import itemgetter
-import pymysql
+import psycopg2
 
 import config
 from data.logging import profile
@@ -36,18 +36,15 @@ def get_poem_network(db, poems, t=0.1, maxdepth=3, maxnodes=30):
     poem_depth = { nro: 0 for nro in poems }
     depth = 0
     while depth < maxdepth and len(poems) < maxnodes:
-        # get candidates for new nodes
         poems.get_similar_poems(db, sim_thr=t)
         sims = []
         sims.extend([s for p in poems.values() for s in p.sim_poems \
                            if s.nro not in poems])
         sims.sort(reverse=True, key=lambda s: s.sim_al)
-        # for each new poem, store only the highest similarity
         sims_dict = {}
         for s in sims:
             if s.nro not in sims_dict:
                 sims_dict[s.nro] = s
-        # apply the limit on the number of nodes -- choose the best new nodes
         sims = list(sims_dict.values())[:maxnodes-len(poems)]
         depth += 1
         for s in sims:
@@ -68,15 +65,15 @@ def get_poem_network(db, poems, t=0.1, maxdepth=3, maxnodes=30):
 def render(**args):
     poemnet, smd = None, None
     poems = Poems(nros=args['nro'])
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        poemnet = get_poem_network(
-            db, poems, t=args['t'],
-            maxdepth=args['maxdepth'], maxnodes=args['maxnodes'])
-        poemnet['nodes'].get_structured_metadata(db)
-        types = poemnet['nodes'].get_types(db)
-        types.get_names(db)
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            poemnet = get_poem_network(
+                db, poems, t=args['t'],
+                maxdepth=args['maxdepth'], maxnodes=args['maxnodes'])
+            poemnet['nodes'].get_structured_metadata(db)
+            types = poemnet['nodes'].get_types(db)
+            types.get_names(db)
     links = generate_page_links(args)
     data = { 'poemnet': poemnet, 'types': types,
              'maintenance': config.check_maintenance() }
     return render_template('poemnet.html', args=args, data=data, links=links)
-

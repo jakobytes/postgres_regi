@@ -1,5 +1,5 @@
 from flask import render_template
-import pymysql
+import psycopg2
 from urllib.parse import urlencode
 
 import config
@@ -80,37 +80,37 @@ def render(**args):
                .format(MAX_QUERY_LENGTH)
     if args['end'] < args['start']:
         return '<b>Error:</b> passage end before the start!'
-    with pymysql.connect(**config.MYSQL_PARAMS).cursor() as db:
-        clusterings = get_clusterings(db)
-        passage = get_verses(db, nro=args['nro'], start_pos=args['start'],
-                             end_pos=args['end'], clustering_id=args['clustering'])
-        clust_ids = set(v.clust_id for v in passage)
-        verses = get_verses(db, clust_id=tuple(clust_ids),
-                            clustering_id=args['clustering'])
-        verses.sort(key=lambda v: (v.nro, v.pos))
-        min_hit_length = args['hitfact'] * (args['end']-args['start']+1)
-        hits = filter_hits(verses, dist=args['dist'],
-                           min_hit_length=min_hit_length)
-        # get the whole snippets with context
-        passages = [ 
-            { 'verses':
-                  get_verses(db, nro=h[0].nro,
-                             start_pos=h[0].pos-args['context'],
-                             end_pos=h[-1].pos+args['context'],
-                             clustering_id=args['clustering'])
-            } for h in hits
-        ]
-        for pas in passages:
-            pas['nro'] = pas['verses'][0].nro
-            pas['matches'] = [v.pos for v in pas['verses'] if v.clust_id in clust_ids]
-            pas['hl'] = (pas['verses'][0].nro == args['nro'] \
-                         and pas['verses'][0].pos in \
-                             range(args['start']-args['context'], 
-                                   args['end']+args['context']))
-        poems = Poems(nros=[pas['verses'][0].nro for pas in passages])
-        poems.get_structured_metadata(db)
-        types = poems.get_types(db)
-        types.get_names(db)
+    with psycopg2.connect(**config.POSTGRESQL_PARAMS) as db_con:
+        with db_con.cursor() as db:
+            clusterings = get_clusterings(db)
+            passage = get_verses(db, nro=args['nro'], start_pos=args['start'],
+                                 end_pos=args['end'], clustering_id=args['clustering'])
+            clust_ids = set(v.clust_id for v in passage)
+            verses = get_verses(db, clust_id=tuple(clust_ids),
+                                clustering_id=args['clustering'])
+            verses.sort(key=lambda v: (v.nro, v.pos))
+            min_hit_length = args['hitfact'] * (args['end']-args['start']+1)
+            hits = filter_hits(verses, dist=args['dist'],
+                               min_hit_length=min_hit_length)
+            passages = [ 
+                { 'verses':
+                      get_verses(db, nro=h[0].nro,
+                                 start_pos=h[0].pos-args['context'],
+                                 end_pos=h[-1].pos+args['context'],
+                                 clustering_id=args['clustering'])
+                } for h in hits
+            ]
+            for pas in passages:
+                pas['nro'] = pas['verses'][0].nro
+                pas['matches'] = [v.pos for v in pas['verses'] if v.clust_id in clust_ids]
+                pas['hl'] = (pas['verses'][0].nro == args['nro'] \
+                             and pas['verses'][0].pos in \
+                                 range(args['start']-args['context'], 
+                                       args['end']+args['context']))
+            poems = Poems(nros=[pas['verses'][0].nro for pas in passages])
+            poems.get_structured_metadata(db)
+            types = poems.get_types(db)
+            types.get_names(db)
 
     if args['format'] in ('csv', 'tsv'):
         return render_csv([
@@ -136,4 +136,3 @@ def render(**args):
                  'clusterings': clusterings,
                  'maintenance': config.check_maintenance() }
         return render_template('passage.html', args=args, data=data, links=links)
-
