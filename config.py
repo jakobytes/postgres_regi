@@ -98,10 +98,3 @@ def setup_tables():
             else:
                 warnings.warn('Table `{}` not found. {}'.format(tbl, TABLE_ERRMSG[tbl]))
 
-
-def check_maintenance():
-    with psycopg2.connect(**POSTGRESQL_PARAMS) as db_con:
-        with db_con.cursor() as db:
-            db.execute('SELECT SUM(ready != 1) FROM dbmeta;')
-            result = db.fetchone()
-            return result[0] > 0
