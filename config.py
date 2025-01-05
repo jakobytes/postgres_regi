@@ -6,11 +6,11 @@ import warnings
 
 
 POSTGRESQL_PARAMS = {
-    'host': '86.50.252.165',
-    'port': int('5432'),
-    'user': 'csc',
-    'password':'huhhoq-gecko0-qItwuq',
-    'dbname': 'Elias'
+    'host': os.getenv('DB_HOST'),
+    'port':  int(os.getenv('DB_PORT')),
+    'user': os.getenv('DB_USER'),
+    'password':os.getenv('DB_PASS'),
+    'dbname': os.getenv('DB_NAME')
 }
 
 VISUALIZATIONS_URL = os.getenv('VISUALIZATIONS_URL')
