@@ -6,10 +6,8 @@ from urllib.parse import urlencode
 import config
 from data.logging import profile
 from data.poems import Poems
-from data.verses import \
-    get_clusterings, get_verses, get_verse_cluster_neighbors
+from data.verses import get_clusterings, get_verses, get_verse_cluster_neighbors
 from utils import print_type_list, render_csv
-
 
 DEFAULTS = {
   'format': 'html',
@@ -18,7 +16,6 @@ DEFAULTS = {
   'v_id': 0,
   'clustering': 0
 }
-
 
 @profile
 def render(**args):

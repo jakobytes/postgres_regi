@@ -12,7 +12,6 @@ from data.poems import Poems
 from methods.verse_sim import compute_verse_similarity
 from utils import link, makecol, render_csv, remove_xml
 
-
 DEFAULTS = {
   'nro1': None,
   'nro2': None,
@@ -23,7 +22,6 @@ DEFAULTS = {
 COLOR_NORMAL = None
 COLOR_CHARDIFF = 'blue'
 COLOR_LINEDIFF = 'grey'
-
 
 def generate_page_links(args):
     global DEFAULTS
@@ -39,7 +37,6 @@ def generate_page_links(args):
     for t in [0, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]:
         result['t'][t] = pagelink(t=t)
     return result
-
 
 @profile
 def render(**args):
@@ -120,7 +117,7 @@ def render(**args):
                 verse_1.append((COLOR_LINEDIFF, row[0].text_norm))
             if row[1] is not None:
                 verse_2.append((COLOR_LINEDIFF, row[1].text_norm))
-        alignment.append((verse_1, verse_2, (row[2], makecol(row[2]**2, '337ab7', 1))))
+        alignment.append((verse_1, verse_2, (row[2], _makecol(row[2]**2))))
     raw_sim = sum(w for x, y, w in al)
     scores = [
         raw_sim,

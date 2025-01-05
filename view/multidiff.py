@@ -13,14 +13,12 @@ from methods.verse_sim import compute_verse_similarity
 from methods.hclust import make_sim_mtx, sim_to_dist
 from utils import link, render_csv, remove_xml
 
-
 DEFAULTS = {
   'nro': [],
   'method': 'none',
   't': 0.75,
   'format': 'html'
 }
-
 
 def generate_page_links(args):
     global DEFAULTS
@@ -38,7 +36,6 @@ def generate_page_links(args):
     for t in [0, 0.3, 0.4, 0.5, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95, 1]:
         result['t'][t] = pagelink(t=t)
     return result
-
 
 def merge_alignments(poems, merges, v_sims):
     def _agr_sim(x, y):
@@ -66,7 +63,6 @@ def merge_alignments(poems, merges, v_sims):
         alignments.append([_merge(x, y, len(al_1[0]), len(al_2[0])) \
                            for x, y, w in pair_al])
     return alignments[-1]
-
 
 @profile
 def render(**args):

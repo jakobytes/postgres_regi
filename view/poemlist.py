@@ -10,9 +10,7 @@ from data.misc import get_collector_data, get_parishes, get_place_data
 from data.poems import Poems
 from data.types import Types, render_type_tree
 
-
 DEFAULTS = { 'source': None, 'id': None }
-
 
 def get_by_type(db, type_id):
     upper = Types(ids=[type_id])
@@ -43,7 +41,6 @@ def get_by_type(db, type_id):
              'description': types[type_id].description
            }
 
-
 @profile
 def render(**args):
     data = {}
@@ -65,7 +62,6 @@ def render(**args):
                             place_data.county_id, place_data.county_name, place_data.parish_name
                         ) if place_data.parish_name is not None else place_data.county_name
                 data = { 'poems': poems, 'title': title, 'parishes': parishes }
-
 
     links = {}
     if args['source'] == 'type':

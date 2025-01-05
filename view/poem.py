@@ -13,7 +13,6 @@ from data.poems import Poems
 from data.verses import get_clusterings, get_verses
 from utils import link, makecol, render_xml
 
-
 DEFAULTS = {
   'nro': None,
   'format': 'html',
@@ -48,7 +47,6 @@ def generate_page_links(args, clusterings):
         result['clustering'][c[0]] = pagelink(clustering=c[0])
     return result
 
-
 def get_shared_verses(db, poem, max, thr, order, clustering_id=0):
     clust_ids = set(v.clust_id for v in poem.text if v.v_type == 'V' and v.text_cl)
     verses = get_verses(db, clust_id=tuple(clust_ids), clustering_id=clustering_id)
@@ -81,7 +79,7 @@ def get_shared_verses(db, poem, max, thr, order, clustering_id=0):
             else:
                 for nro in nros:
                     last_index[nro] = i
-    else:  #order == "shared"
+    else:  # order == "shared"
         poem_weights = poem_versecounts
     verse_poems = defaultdict(list)
     linked_poems = set()
@@ -93,7 +91,6 @@ def get_shared_verses(db, poem, max, thr, order, clustering_id=0):
     linked_poems_sorted = sorted(linked_poems, reverse=True,
                                  key=lambda nro: poem_weights[nro])
     return verse_poems, linked_poems_sorted, len(poem_versecounts)
-
 
 @profile
 def render(**args):

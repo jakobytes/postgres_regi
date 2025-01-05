@@ -22,11 +22,9 @@ if config.ENABLE_PROXY:
     application.wsgi_app = ProxyFix(application.wsgi_app)
 config.setup_tables()
 
-
 def _compact(string):
     'Remove empty lines from the HTML code.'
     return re.sub(r'\n(\s*\n)+', '\n', string)
-
 
 def getargs(request, defaults):
     result = {}
@@ -43,20 +41,17 @@ def getargs(request, defaults):
                 pass
     return result
 
-
 @application.route('/clustnet')
 def show_clustnet():
     args = getargs(request, view.clustnet.DEFAULTS)
     result = view.clustnet.render(**args)
     return _compact(result)
 
-
 @application.route('/dendrogram')
 def show_dendrogram():
     args = getargs(request, view.dendrogram.DEFAULTS)
     result = view.dendrogram.render(**args)
     return _compact(result)
-
 
 @application.route('/passage')
 def show_passage():
@@ -66,7 +61,6 @@ def show_passage():
         return Response(result, mimetype='text/plain')
     else:
         return _compact(result)
-
 
 @application.route('/poemdiff')
 @application.route('/runodiff')
@@ -78,7 +72,6 @@ def show_diff():
     else:
         return _compact(result)
 
-
 @application.route('/multidiff')
 def show_multidiff():
     args = getargs(request, view.multidiff.DEFAULTS)
@@ -87,7 +80,6 @@ def show_multidiff():
         return Response(result, mimetype='text/plain')
     else:
         return _compact(result)
-
 
 @application.route('/poem')
 @application.route('/runo')
@@ -101,20 +93,17 @@ def show_poem():
     else:
         return _compact(result)
 
-
 @application.route('/poemlist')
 def show_poemlist():
     args = getargs(request, view.poemlist.DEFAULTS)
     result = view.poemlist.render(**args)
     return _compact(result)
 
-
 @application.route('/poemnet')
 def show_poemnet():
     args = getargs(request, view.poemnet.DEFAULTS)
     result = view.poemnet.render(**args)
     return _compact(result)
-
 
 @application.route('/verse')
 def show_verse():
@@ -124,7 +113,6 @@ def show_verse():
         return Response(result, mimetype='text/plain')
     else:
         return _compact(result)
-
 
 @application.route('/search')
 @application.route('/')
@@ -139,18 +127,15 @@ def show_search():
     result = view.search.render(**args)
     return _compact(result)
 
-
 @application.route('/theme')
 @application.route('/type')
 def show_type():
     type_id = request.args.get('id', None, str)
     return redirect('/poemlist?source=type&id={}'.format(type_id))
 
-
 @application.route('/robots.txt')
 def show_robots_txt():
     return application.send_static_file('robots.txt')
-
 
 if __name__ == '__main__':
     application.run()

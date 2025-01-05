@@ -22,7 +22,6 @@ DEFAULTS = {
   'format': 'html'
 }
 
-
 def generate_page_links(args, clusterings):
     global DEFAULTS
 
@@ -54,7 +53,6 @@ def generate_page_links(args, clusterings):
         result['clustering'][c[0]] = pagelink(clustering=c[0])
     return result
 
-
 def filter_hits(verses, dist=2, min_hit_length=1):
     hits, cur_hit = [], []
     for v in verses:
@@ -71,7 +69,6 @@ def filter_hits(verses, dist=2, min_hit_length=1):
         hits.append(cur_hit)
     hits.sort(reverse=True, key=lambda h: (len(h), h[-1].pos-h[0].pos))
     return hits
-
 
 @profile
 def render(**args):

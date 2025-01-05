@@ -8,7 +8,6 @@ from data.pages import get_page_content
 from data.search import search_meta, search_types, search_verses, search_smd
 from data.types import render_type_tree, Types
 
-
 DEFAULTS = {
   'q': None,
   'method': 'plain',
@@ -47,7 +46,6 @@ DEFAULT_PAGES = [
       'This is some text...'
   },
 ]
-
 
 @profile
 def render(**args):

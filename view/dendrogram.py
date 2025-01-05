@@ -13,7 +13,6 @@ from data.types import Types, render_type_tree
 from methods.hclust import make_sim_mtx, sim_to_dist
 from utils import link
 
-
 DEFAULTS = {
   'source': None,
   'nro': [],
@@ -25,7 +24,6 @@ DEFAULTS = {
 }
 
 MAX_TYPE_STYLES = 8
-
 
 def generate_page_links(args):
     global DEFAULTS
@@ -60,7 +58,6 @@ def generate_page_links(args):
             if config.VISUALIZATIONS_URL else None
     return result
 
-
 # transform linkages to a vertical dendrogram
 def transform_vert(dd, n, nros):
 
@@ -87,7 +84,6 @@ def transform_vert(dd, n, nros):
             nros2 = [nros[int(dd[i,1])]] if dd[i,1] < n else result[int(dd[i,1])-n][6]
             result.append((x1, y1, x2, y2, x, y, nros1+nros2))
     return result
-
 
 @profile
 def render(**args):

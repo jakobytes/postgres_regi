@@ -7,14 +7,12 @@ from data.logging import profile
 from data.poems import Poems
 from utils import link
 
-
 DEFAULTS = {
   'nro': [],
   'maxdepth': 1,
   'maxnodes': 20,
   't': 0.1,
 }
-
 
 def generate_page_links(args):
     global DEFAULTS
@@ -30,7 +28,6 @@ def generate_page_links(args):
     for val in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1]:
         result['t'][val] = pagelink(t=val)
     return result
-
 
 def get_poem_network(db, poems, t=0.1, maxdepth=3, maxnodes=30):
     poem_depth = { nro: 0 for nro in poems }
@@ -59,7 +56,6 @@ def get_poem_network(db, poems, t=0.1, maxdepth=3, maxnodes=30):
                 edges.append((nro, s.nro, s.sim_al))
 
     return { 'nodes': poems, 'edges': edges }
-
 
 @profile
 def render(**args):

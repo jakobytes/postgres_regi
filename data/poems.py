@@ -162,43 +162,48 @@ class Poems:
         get_place = config.TABLES['places'] and config.TABLES['p_pl']
         query_lst = [
             'SELECT poems.nro, collection, title,',
-            ('GROUP_CONCAT(DISTINCT IFNULL('
-             '    CONCAT(pl2.place_orig_id, ":", pl2.name, "|",'
-             '           pl.place_orig_id, ":", pl.name),'
-             '    CONCAT(pl.place_orig_id, ":", pl.name)'
-             ') SEPARATOR ";;;"),'\
-             if get_place else 'NULL,'),
-            ('GROUP_CONCAT(DISTINCT CONCAT(c.col_orig_id, ":", c.name) SEPARATOR ";;;"),'\
-             if get_collector else 'NULL,'),
-            ('year' if config.TABLES['p_year'] else 'NULL'),
-            'FROM poems']
+            ('STRING_AGG(DISTINCT COALESCE('
+            'pl2.place_orig_id || \':\' || pl2.name || \'|\' || '
+            'pl.place_orig_id || \':\' || pl.name, '
+            'pl.place_orig_id || \':\' || pl.name), \';;;\') AS places' if get_place else 'NULL AS places'),
+            ',',
+            ('STRING_AGG(DISTINCT c.col_orig_id || \':\' || c.name, \';;;\') AS collectors' if get_collector else 'NULL AS collectors'),
+            ',',
+            ('year' if config.TABLES['p_year'] else 'NULL AS year'),
+            'FROM poems'
+        ]
         if get_place:
             query_lst.extend([
-              'LEFT OUTER JOIN p_pl ON poems.p_id = p_pl.p_id',
-              'LEFT OUTER JOIN places pl ON p_pl.pl_id = pl.pl_id',
-              'LEFT OUTER JOIN places pl2 ON pl.par_id = pl2.pl_id'
+            'LEFT OUTER JOIN p_pl ON poems.p_id = p_pl.p_id',
+            'LEFT OUTER JOIN places pl ON p_pl.pl_id = pl.pl_id',
+            'LEFT OUTER JOIN places pl2 ON pl.par_id = pl2.pl_id'
             ])
         if get_collector:
             query_lst.extend([
-              'LEFT OUTER JOIN p_col ON poems.p_id = p_col.p_id',
-              'LEFT OUTER JOIN collectors c ON p_col.col_id = c.col_id'
+            'LEFT OUTER JOIN p_col ON poems.p_id = p_col.p_id',
+            'LEFT OUTER JOIN collectors c ON p_col.col_id = c.col_id'
             ])
         if config.TABLES['p_year']:
             query_lst.append('LEFT OUTER JOIN p_year ON poems.p_id = p_year.p_id')
         query_lst.append('WHERE poems.nro IN %s')
-        # if GROUP_CONCATs present -- return one row per poem
-        if get_place or get_collector:
-            query_lst.append('GROUP BY poems.p_id')
+        
+        # Ensure all non-aggregated columns are in the GROUP BY clause
+        query_lst.append('GROUP BY poems.nro, collection, title')
+        if config.TABLES['p_year']:
+            query_lst.append(', year')
         query_lst.append(';')
-        db.execute(' '.join(query_lst), (tuple(self),))
-        #print(db._executed)
+
+        # Debugging: Print the constructed query
+        query = ' '.join(query_lst)
+        print("Executing SQL:", query)
+        db.execute(query, (tuple(self),))
         results = []
+  
         for nro, collection, title, pl, col, year in db.fetchall():
-            # TODO refactor the parsing of the results
             place_lst = []
             if pl is not None:
                 for x in pl.split(';;;'):
-                    m = re.match(r'([^:|]+):([^:|]+)(\\|([^:|]+):([^:|]+))?', x)
+                    m = re.match('([^:|]+):([^:|]+)(\\|([^:|]+):([^:|]+))?', x)
                     if m is not None:
                         place_lst.append(PlaceData(m.group(1), m.group(2), m.group(4), m.group(5)))
             collector_lst = []
@@ -208,7 +213,7 @@ class Poems:
                     if m is not None:
                         collector_lst.append(CollectorData(m.group(1), m.group(2)))
             place = '; '.join([
-                '{} \u2014 {}'.format(p.county_name, p.parish_name) \
+                '{} — {}'.format(p.county_name, p.parish_name) \
                 if p.parish_name is not None else '{}'.format(p.county_name) \
                 for p in place_lst]) \
                 if place_lst else None
@@ -310,4 +315,3 @@ def get_poem_by_id_or_title(db, q):
         (q, q, q + '.'))
     results = db.fetchall()
     return results[0][0] if results else None
-
