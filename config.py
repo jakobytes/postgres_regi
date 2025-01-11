@@ -1,4 +1,5 @@
 import os
+
 from operator import itemgetter
 import psycopg2
 import re
