@@ -1,0 +1,18 @@
+<p><b>Elias 1848</b> is a version of <a href="https://runoregi.fi">Runoregi</a> that includes only the poems that Elias Lönnrot had access to when he compiled the <i>Kalevala</i>.</p>
+<p><b>The tool is experimental and not intended for use for a wider audience.</b> Weird things can happen.</p>
+<p>The corpus currently combines the following collections:
+<ul>
+<li><a href="https://skvr.fi/"> Suomen Kansan Vanhat Runot</a>, only including the poems collected before 1849. (Old Poems of the Finnish People; SKVR)
+<li>The Finnish Literature Society's <a href="https://aineistot.finlit.fi/exist/apps/skvr/runoluettelo-jr.html?view=single&odd=teipublisher">Corpus of unpublished poems</a> (JR) only including the poems collected before 1849.
+<li>A <a href="https://github.com/sks190/KR">Corpus of literary poems</a> (KR) based on public domain sources. Only those published before 1849 with these exceptions:
+<ul>
+<li>Elias Lönnrot : Kalevala (1849)</li>
+<li>Elias Lönnrot : Suomen Kansan arwoituksia ynnä 189 Wiron arwoituksen kanssa (1851)</li>
+<li>Suomen Kansan Muinaisia Loitsurunoja toimittanut Elias Lönnrot (1880)</li>
+<li>Elias Lönnrot : Lisiä Vanhaan Kalevalaan (Niemi, A. R.,1895) </li>
+</ul>
+</ul></p>
+<p>The aim of this project is to harness the tools created by <a href="https://github.com/maciejjan">Maciej Janicki</a> as part of the <a href="blogs.helsinki.fi/filter-project/">FILTER-project</a> to analyse a subset of the FILTER-project corpus, consisting of poems recorded before the publication of Kalevala in 1849. This tool enables comparision between poems with high similarity side-by-side, in order to reveal how Elias Lönnrot used, altered and merged variants of poems when compiling the Kalevala epic. The number of poems in this dataset is <b>21919</b>, which equals to roughly 10% of the whole FILTER-corpus.</p>
+<p>The poems were processed using <a href="https://github.com/hsci-r/filter-pipeline">Filter-pipeline</a>, including recalculating similarity and clustering scores.</a> The resulting CSV files were then convrted into a postgres-database using a modified version of <a href="https://github.com/hsci-r/filter-db">filter-db.</a>The <a href="https://github.com/hsci-r/runoregi">Runoregi interface</a> was likewise modified for psql-queries.</p>
+<b>Privacy policy</b>
+<p>This web-application does not use cookies, collect data, nor store any data on the user's computer.</p>
