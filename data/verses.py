@@ -103,11 +103,14 @@ def get_verse_cluster_neighbors(
         db, clust_id, clustering_id=0, by_cluster=False, limit=None):
 
     result = []
-    # ignore if the tables are not available
+    # Ignore if the tables are not available
     if not config.TABLES['v_clust'] or not config.TABLES['v_clust_freq']:
         return result
+
     query_args = [clustering_id, clustering_id, clust_id, clust_id]
+    
     if by_cluster:
+        # Query with GROUP BY and SUM for aggregation
         query_lst = [
             'SELECT ',
             '   p1.nro, vp1.pos, v1.v_id, v1.type, v1.text, v1_cl.text,',
@@ -133,10 +136,15 @@ def get_verse_cluster_neighbors(
             '  JOIN v_clust_freq vcf2 ON vc2.clust_id = vcf2.clust_id',
             '                         AND vc2.clustering_id = vcf2.clustering_id ',
             'WHERE vc1.clust_id IN %s AND vc2.clust_id NOT IN %s ',
-            'GROUP BY vc1.clust_id, vc2.clust_id',
+            'GROUP BY ',
+            '   p1.nro, vp1.pos, v1.v_id, v1.type, v1.text, v1_cl.text,',
+            '   vc1.clust_id, vcf1.freq, ',
+            '   p2.nro, vp2.pos, v2.v_id, v2.type, v2.text, v2_cl.text,',
+            '   vc2.clust_id, vcf2.freq ',
             'ORDER BY sim DESC '
         ]
     else:
+        # Query for non-clustered case
         query_lst = [
             'SELECT ',
             '   s.v1_id,',
@@ -157,15 +165,19 @@ def get_verse_cluster_neighbors(
             'WHERE vc1.clust_id IN %s AND vc2.clust_id NOT IN %s ',
             'ORDER BY s.v1_id, s.sim_cos DESC;'
         ]
+
     if limit is not None:
         query_lst.append('LIMIT %s')
         query_args.append(limit)
     query_lst.append(';')
+    
     db.execute(' '.join(query_lst), tuple(query_args))
+    
     for row in db.fetchall():
         if by_cluster:
             result.append((Verse(*row[:8]), Verse(*row[8:16]), row[16]))
         else:
             result.append((row[0], Verse(*row[1:-1]), row[-1]))
+    
     return result
 
